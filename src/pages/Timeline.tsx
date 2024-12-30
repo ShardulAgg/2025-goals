@@ -18,6 +18,8 @@ import {
   FitnessCenter as StrengthIcon,
   AttachMoney as CustomerIcon,
   Rocket as ReleaseIcon,
+  LinkedIn as LinkedInIcon,
+  Twitter as TwitterIcon,
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 import {
@@ -35,6 +37,7 @@ import {
   parseISO,
 } from 'date-fns';
 import YearlyStats from '../components/YearlyStats';
+import { captureAndShare } from '../utils/screenshot';
 
 // Add achievement type definitions from DailyInput
 interface AchievementTypeInfo {
@@ -314,6 +317,15 @@ function Timeline() {
     return achievements.filter(a => types.includes(a.type.id));
   };
 
+  const handleShareTimeline = async (platform: 'linkedin' | 'twitter') => {
+    await captureAndShare(
+      ['workout-timeline', 'work-timeline'],
+      'My Achievement Timeline',
+      'Check out my progress throughout the year!',
+      { platform }
+    );
+  };
+
   return (
     <>
       <Box sx={{ p: { xs: 2, sm: 3 } }}>
@@ -329,13 +341,35 @@ function Timeline() {
           }}>
             Activity Timeline
           </Typography>
-          <Box sx={{ display: 'flex', gap: 1 }}>
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+            <IconButton
+              onClick={() => handleShareTimeline('twitter')}
+              sx={{ 
+                color: '#1DA1F2',
+                '&:hover': {
+                  backgroundColor: 'rgba(29, 161, 242, 0.1)',
+                }
+              }}
+            >
+              <TwitterIcon />
+            </IconButton>
+            <IconButton
+              onClick={() => handleShareTimeline('linkedin')}
+              sx={{ 
+                color: '#0A66C2',
+                '&:hover': {
+                  backgroundColor: 'rgba(10, 102, 194, 0.1)',
+                }
+              }}
+            >
+              <LinkedInIcon />
+            </IconButton>
             {[2024, 2025].map(year => (
               <Button
                 key={year}
                 variant={selectedYear === year ? "contained" : "outlined"}
                 onClick={() => setSelectedYear(year)}
-                sx={{
+                sx={{ 
                   color: selectedYear === year ? '#fff' : '#8b949e',
                   borderColor: '#30363d',
                   backgroundColor: selectedYear === year ? '#238636' : 'transparent',
@@ -364,7 +398,7 @@ function Timeline() {
                 Workout Timeline
               </Typography>
               
-              <Container>
+              <Container id="workout-timeline">
                 {/* Month Labels */}
                 {monthPositions.map(({ month, offset, width }, index) => {
                   const isVisible = offset < (CONTAINER_WIDTH - WEEKDAY_WIDTH - CONTAINER_PADDING * 2 - 50);
@@ -563,7 +597,7 @@ function Timeline() {
                 Work Timeline
               </Typography>
               
-              <Container>
+              <Container id="work-timeline">
                 {/* Month Labels */}
                 {monthPositions.map(({ month, offset, width }, index) => {
                   const isVisible = offset < (CONTAINER_WIDTH - WEEKDAY_WIDTH - CONTAINER_PADDING * 2 - 50);

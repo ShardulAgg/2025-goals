@@ -1,7 +1,7 @@
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
-import { Container, AppBar, Toolbar, Button } from '@mui/material';
+import { Container, AppBar, Toolbar, Button, Box } from '@mui/material';
 import { AchievementProvider } from './contexts/AchievementContext';
 import DailyInput from './pages/DailyInput';
 import Timeline from './pages/Timeline';
@@ -24,23 +24,58 @@ const darkTheme = createTheme({
   },
 });
 
+function NavButton({ to, children }: { to: string; children: React.ReactNode }) {
+  const location = useLocation();
+  const isActive = location.pathname === to;
+  
+  return (
+    <Button
+      component={Link}
+      to={to}
+      sx={{
+        color: 'text.primary',
+        minWidth: '100px',
+        position: 'relative',
+        '&:after': {
+          content: '""',
+          position: 'absolute',
+          bottom: 0,
+          left: '10%',
+          width: isActive ? '80%' : '0%',
+          height: '2px',
+          bgcolor: 'primary.main',
+          transition: 'width 0.3s ease-in-out',
+        },
+        '&:hover:after': {
+          width: '80%',
+        }
+      }}
+    >
+      {children}
+    </Button>
+  );
+}
+
 function App() {
   return (
     <ThemeProvider theme={darkTheme}>
       <CssBaseline />
       <AchievementProvider>
         <Router>
-          <AppBar position="static" sx={{ bgcolor: '#161b22', borderBottom: '1px solid #30363d' }}>
-            <Toolbar>
-              <Button color="inherit" component={Link} to="/">
-                Daily Log
-              </Button>
-              <Button color="inherit" component={Link} to="/timeline">
-                Timeline
-              </Button>
-              <Button color="inherit" component={Link} to="/badges">
-                Badges
-              </Button>
+          <AppBar 
+            position="static" 
+            elevation={0}
+            sx={{ 
+              bgcolor: 'background.paper',
+              borderBottom: '1px solid #30363d'
+            }}
+          >
+            <Toolbar sx={{ justifyContent: 'center' }}>
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <NavButton to="/">Daily Log</NavButton>
+                <NavButton to="/timeline">Timeline</NavButton>
+                <NavButton to="/badges">Badges</NavButton>
+              </Box>
             </Toolbar>
           </AppBar>
           <Container sx={{ mt: 4 }}>

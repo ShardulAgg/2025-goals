@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Typography,
@@ -7,15 +7,29 @@ import {
   Stack,
   Chip,
   Tooltip,
-  Divider,
+  IconButton,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
 } from '@mui/material';
 import { useAchievements } from '../contexts/AchievementContext';
 import { ACHIEVEMENT_TYPES } from '../constants/achievementTypes';
 import { BADGES } from '../constants/badges';
-import { Lock as LockIcon } from '@mui/icons-material';
+import { 
+  Lock as LockIcon,
+  Share as ShareIcon,
+  Twitter as TwitterIcon,
+  LinkedIn as LinkedInIcon,
+  Facebook as FacebookIcon,
+  Link as LinkIcon,
+} from '@mui/icons-material';
+import { captureAndShare } from '../utils/screenshot';
 
 export default function Badges() {
   const { badges } = useAchievements();
+  const [shareAnchorEl, setShareAnchorEl] = useState<null | HTMLElement>(null);
+  const [selectedBadge, setSelectedBadge] = useState<any>(null);
 
   // Group badges by category using achievement types
   const groupedBadges = Object.values(BADGES).reduce((acc, badge) => {
@@ -33,6 +47,56 @@ export default function Badges() {
     acc[category].push({ ...badge, isEarned });
     return acc;
   }, {} as Record<string, Array<typeof BADGES[keyof typeof BADGES] & { isEarned: boolean }>>);
+
+  const handleShareClick = (event: React.MouseEvent<HTMLElement>, badge: any) => {
+    setShareAnchorEl(event.currentTarget);
+    setSelectedBadge(badge);
+  };
+
+  const handleShareClose = () => {
+    setShareAnchorEl(null);
+    setSelectedBadge(null);
+  };
+
+  const handleShare = (platform: string) => {
+    if (!selectedBadge) return;
+
+    const shareText = `I just earned the ${selectedBadge.label} badge! ${selectedBadge.description}`;
+    const url = window.location.href;
+
+    let shareUrl = '';
+    switch (platform) {
+      case 'twitter':
+        shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(url)}`;
+        break;
+      case 'linkedin':
+        shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}&summary=${encodeURIComponent(shareText)}`;
+        break;
+      case 'facebook':
+        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}&quote=${encodeURIComponent(shareText)}`;
+        break;
+      case 'copy':
+        navigator.clipboard.writeText(`${shareText} ${url}`);
+        handleShareClose();
+        return;
+    }
+
+    window.open(shareUrl, '_blank');
+    handleShareClose();
+  };
+
+  const handleShareBadge = async (badge: any) => {
+    if (!badge.isEarned) return;
+    
+    const badgeElement = document.getElementById(`badge-${badge.id}`);
+    if (!badgeElement) return;
+
+    await captureAndShare(
+      `badge-${badge.id}`,
+      `${badge.label} Badge`,
+      badge.description
+    );
+  };
 
   return (
     <Box sx={{ 
@@ -73,6 +137,7 @@ export default function Badges() {
                 {categoryBadges.map((badge) => (
                   <Grid item xs={12} sm={6} md={4} key={badge.id}>
                     <Paper
+                      id={`badge-${badge.id}`}
                       sx={{
                         p: 2,
                         bgcolor: badge.isEarned ? `${badge.color}11` : '#161b22',
@@ -105,6 +170,29 @@ export default function Badges() {
                               {badge.description}
                             </Typography>
                           </Box>
+                          {badge.isEarned && (
+                            <Stack direction="row" spacing={1}>
+                              <IconButton
+                                size="small"
+                                onClick={(e) => handleShareClick(e, badge)}
+                                sx={{ color: '#8b949e' }}
+                              >
+                                <ShareIcon />
+                              </IconButton>
+                              <IconButton
+                                size="small"
+                                onClick={() => handleShareBadge(badge)}
+                                sx={{ 
+                                  color: '#0A66C2',
+                                  '&:hover': {
+                                    backgroundColor: 'rgba(10, 102, 194, 0.1)',
+                                  }
+                                }}
+                              >
+                                <LinkedInIcon />
+                              </IconButton>
+                            </Stack>
+                          )}
                         </Stack>
 
                         <Box>
@@ -149,6 +237,44 @@ export default function Badges() {
           </Grid>
         ))}
       </Grid>
+
+      <Menu
+        anchorEl={shareAnchorEl}
+        open={Boolean(shareAnchorEl)}
+        onClose={handleShareClose}
+        PaperProps={{
+          sx: {
+            bgcolor: '#21262d',
+            border: '1px solid #30363d',
+            color: '#c9d1d9',
+          }
+        }}
+      >
+        <MenuItem onClick={() => handleShare('twitter')}>
+          <ListItemIcon>
+            <TwitterIcon sx={{ color: '#1DA1F2' }} />
+          </ListItemIcon>
+          <ListItemText>Share on X</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={() => handleShare('linkedin')}>
+          <ListItemIcon>
+            <LinkedInIcon sx={{ color: '#0A66C2' }} />
+          </ListItemIcon>
+          <ListItemText>Share on LinkedIn</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={() => handleShare('facebook')}>
+          <ListItemIcon>
+            <FacebookIcon sx={{ color: '#1877F2' }} />
+          </ListItemIcon>
+          <ListItemText>Share on Facebook</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={() => handleShare('copy')}>
+          <ListItemIcon>
+            <LinkIcon sx={{ color: '#8b949e' }} />
+          </ListItemIcon>
+          <ListItemText>Copy Link</ListItemText>
+        </MenuItem>
+      </Menu>
     </Box>
   );
 } 
