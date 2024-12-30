@@ -32,6 +32,7 @@ import {
 import { useAchievements } from '../contexts/AchievementContext';
 import { ACHIEVEMENT_TYPES } from '../constants/achievementTypes';
 import { Achievement, AchievementType } from '../types/achievements';
+import AchievementBadges from '../components/AchievementBadges';
 
 function DailyInput() {
   const { addAchievement, removeAchievement, getAchievementsForDate } = useAchievements();
@@ -185,18 +186,20 @@ function DailyInput() {
                       <Box sx={{ color: type.color }}>
                         {type.icon}
                       </Box>
-                      <Typography 
-                        variant="body2"
-                        sx={{ 
-                          color: '#c9d1d9',
-                          flexGrow: 1,
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                        }}
-                      >
-                        {type.label}
-                      </Typography>
+                      <Box sx={{ flexGrow: 1 }}>
+                        <Typography 
+                          variant="body2"
+                          sx={{ 
+                            color: '#c9d1d9',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                          }}
+                        >
+                          {type.label}
+                        </Typography>
+                        <AchievementBadges type={type} />
+                      </Box>
                     </Paper>
                   </Grid>
                 ))}

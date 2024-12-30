@@ -1,12 +1,15 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { 
   startOfWeek, 
-  startOfMonth, 
+  startOfMonth,
+  startOfYear,
   differenceInDays,
   isToday,
   isSameDay,
   parseISO,
-  format 
+  format,
+  isWithinInterval,
+  subDays,
 } from 'date-fns';
 import {
   Achievement,
@@ -15,12 +18,15 @@ import {
   AchievementGoal,
   AchievementStats
 } from '../types/achievements';
+import { ACHIEVEMENT_TYPES } from '../constants/achievementTypes';
+import { BADGES, Badge } from '../constants/badges';
 
 interface AchievementContextType {
   achievements: Achievement[];
   templates: AchievementTemplate[];
   goals: AchievementGoal[];
   stats: Record<string, AchievementStats>;
+  badges: Record<string, Badge[]>;
   addAchievement: (achievement: Omit<Achievement, 'id'>) => void;
   removeAchievement: (id: string) => void;
   addTemplate: (template: Omit<AchievementTemplate, 'id' | 'lastUsed'>) => void;
@@ -36,7 +42,14 @@ const AchievementContext = createContext<AchievementContextType | undefined>(und
 export function AchievementProvider({ children }: { children: React.ReactNode }) {
   const [achievements, setAchievements] = useState<Achievement[]>(() => {
     const saved = localStorage.getItem('achievements');
-    return saved ? JSON.parse(saved) : [];
+    if (!saved) return [];
+    
+    // Rehydrate achievement types with proper icon components
+    const parsedAchievements = JSON.parse(saved);
+    return parsedAchievements.map((achievement: Achievement) => ({
+      ...achievement,
+      type: ACHIEVEMENT_TYPES[achievement.type.id]
+    }));
   });
 
   const [templates, setTemplates] = useState<AchievementTemplate[]>(() => {
@@ -50,23 +63,29 @@ export function AchievementProvider({ children }: { children: React.ReactNode })
   });
 
   const [stats, setStats] = useState<Record<string, AchievementStats>>({});
+  const [badges, setBadges] = useState<Record<string, Badge[]>>({});
 
-  // Update stats whenever achievements change
+  // Update stats and badges whenever achievements change
   useEffect(() => {
     const newStats: Record<string, AchievementStats> = {};
+    const newBadges: Record<string, Badge[]> = {};
+    const today = new Date();
     
+    // Initialize stats for each type
+    Object.keys(ACHIEVEMENT_TYPES).forEach(typeId => {
+      newStats[typeId] = {
+        type: typeId,
+        currentStreak: 0,
+        longestStreak: 0,
+        thisWeekCount: 0,
+        thisMonthCount: 0,
+      };
+      newBadges[typeId] = [];
+    });
+
+    // Process achievements to update stats
     achievements.forEach(achievement => {
       const typeId = achievement.type.id;
-      if (!newStats[typeId]) {
-        newStats[typeId] = {
-          type: typeId,
-          currentStreak: 0,
-          longestStreak: 0,
-          thisWeekCount: 0,
-          thisMonthCount: 0,
-        };
-      }
-
       const stat = newStats[typeId];
       const achievementDate = parseISO(achievement.date);
       
@@ -80,8 +99,9 @@ export function AchievementProvider({ children }: { children: React.ReactNode })
       }
 
       // Update period counts
-      const startWeek = startOfWeek(new Date());
-      const startMonth = startOfMonth(new Date());
+      const startWeek = startOfWeek(today);
+      const startMonth = startOfMonth(today);
+      const startYear = startOfYear(today);
       
       if (achievementDate >= startWeek) {
         stat.thisWeekCount++;
@@ -91,7 +111,39 @@ export function AchievementProvider({ children }: { children: React.ReactNode })
       }
     });
 
+    // Check for badges
+    Object.values(BADGES).forEach(badge => {
+      const typeStats = newStats[badge.requirement.type];
+      if (!typeStats) return;
+
+      let earned = false;
+
+      if (badge.requirement.streak) {
+        earned = typeStats.currentStreak >= badge.requirement.streak;
+      } else if (badge.requirement.period) {
+        let count = 0;
+        const periodStart = {
+          'week': startOfWeek(today),
+          'month': startOfMonth(today),
+          'year': startOfYear(today),
+        }[badge.requirement.period];
+
+        if (periodStart) {
+          count = achievements.filter(a => 
+            a.type.id === badge.requirement.type &&
+            parseISO(a.date) >= periodStart
+          ).length;
+          earned = count >= badge.requirement.count;
+        }
+      }
+
+      if (earned && !newBadges[badge.requirement.type].some(b => b.id === badge.id)) {
+        newBadges[badge.requirement.type].push(badge);
+      }
+    });
+
     setStats(newStats);
+    setBadges(newBadges);
   }, [achievements]);
 
   // Save to localStorage whenever data changes
@@ -189,6 +241,7 @@ export function AchievementProvider({ children }: { children: React.ReactNode })
       templates,
       goals,
       stats,
+      badges,
       addAchievement,
       removeAchievement,
       addTemplate,

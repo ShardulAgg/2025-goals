@@ -5,6 +5,7 @@ import { Container, AppBar, Toolbar, Button } from '@mui/material';
 import { AchievementProvider } from './contexts/AchievementContext';
 import DailyInput from './pages/DailyInput';
 import Timeline from './pages/Timeline';
+import Badges from './pages/Badges';
 
 const darkTheme = createTheme({
   palette: {
@@ -37,12 +38,16 @@ function App() {
               <Button color="inherit" component={Link} to="/timeline">
                 Timeline
               </Button>
+              <Button color="inherit" component={Link} to="/badges">
+                Badges
+              </Button>
             </Toolbar>
           </AppBar>
           <Container sx={{ mt: 4 }}>
             <Routes>
               <Route path="/" element={<DailyInput />} />
               <Route path="/timeline" element={<Timeline />} />
+              <Route path="/badges" element={<Badges />} />
             </Routes>
           </Container>
         </Router>
