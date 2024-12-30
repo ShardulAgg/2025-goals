@@ -31,7 +31,7 @@ import {
 } from '@mui/icons-material';
 import { useAchievements } from '../contexts/AchievementContext';
 import { ACHIEVEMENT_TYPES } from '../constants/achievementTypes';
-import { AchievementType } from '../types/achievements';
+import { Achievement, AchievementType } from '../types/achievements';
 
 function DailyInput() {
   const { addAchievement, removeAchievement, getAchievementsForDate } = useAchievements();
@@ -301,7 +301,7 @@ function DailyInput() {
                 border: '1px solid #30363d',
                 borderRadius: 1,
               }}>
-                {categoryAchievements.map((achievement, index) => (
+                {categoryAchievements.map((achievement: Achievement, index: number) => (
                   <Fade in key={achievement.id}>
                     <ListItem 
                       sx={{ 
