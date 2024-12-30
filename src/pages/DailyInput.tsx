@@ -15,6 +15,8 @@ import {
   Grid,
   Paper,
   Radio,
+  Divider,
+  Button,
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -28,6 +30,7 @@ import {
   WbSunny as MorningIcon,
   WbTwilight as AfternoonIcon,
   DarkMode as EveningIcon,
+  Edit as EditIcon,
 } from '@mui/icons-material';
 import { useAchievements } from '../contexts/AchievementContext';
 import { ACHIEVEMENT_TYPES } from '../constants/achievementTypes';
@@ -39,13 +42,16 @@ function DailyInput() {
   const [selectedDate, setSelectedDate] = React.useState<Date>(new Date());
   const [input, setInput] = React.useState('');
   const [selectedType, setSelectedType] = React.useState<AchievementType | null>(null);
-  const [typeSelectionOpen, setTypeSelectionOpen] = React.useState(false);
 
   const achievements = getAchievementsForDate(selectedDate);
 
   const handleTypeSelect = (type: AchievementType) => {
     setSelectedType(type);
-    setTypeSelectionOpen(false);
+    // Focus the input field when a type is selected
+    const inputField = document.getElementById('achievement-input');
+    if (inputField) {
+      inputField.focus();
+    }
   };
 
   const handleSubmit = () => {
@@ -58,7 +64,7 @@ function DailyInput() {
       timeOfDay: getTimeOfDay(),
     });
     setInput('');
-    setSelectedType(null);
+    // Keep the type selected for multiple entries
   };
 
   const getTimeOfDay = () => {
@@ -103,7 +109,7 @@ function DailyInput() {
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Box sx={{ 
-        maxWidth: 800, 
+        maxWidth: 1200, 
         mx: 'auto', 
         px: { xs: 2, sm: 3 },
         py: { xs: 3, sm: 4 },
@@ -113,6 +119,7 @@ function DailyInput() {
           <Typography variant="h4" sx={{ 
             flexGrow: 1, 
             fontSize: { xs: '1.75rem', sm: '2.125rem' },
+            fontWeight: 600,
           }}>
             Daily Log
           </Typography>
@@ -134,215 +141,286 @@ function DailyInput() {
           />
         </Stack>
 
-        {/* Type Selection Grid */}
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="subtitle2" sx={{ mb: 1, color: '#8b949e' }}>
-            Select Type
-          </Typography>
-          <Grid container spacing={1}>
-            {Object.entries(groupedTypes).map(([category, types]) => (
-              <React.Fragment key={category}>
-                <Grid item xs={12}>
-                  <Typography 
-                    variant="caption" 
-                    sx={{ 
-                      color: '#8b949e',
-                      textTransform: 'uppercase',
-                      fontWeight: 600,
-                      pl: 1,
-                    }}
-                  >
-                    {category}
-                  </Typography>
-                </Grid>
-                {types.map((type) => (
-                  <Grid item xs={6} sm={4} md={3} key={type.id}>
-                    <Paper
-                      onClick={() => handleTypeSelect(type)}
-                      sx={{
-                        p: 1.5,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 1,
-                        cursor: 'pointer',
-                        bgcolor: selectedType?.id === type.id ? `${type.color}22` : '#161b22',
-                        border: '1px solid',
-                        borderColor: selectedType?.id === type.id ? type.color : '#30363d',
+        <Grid container spacing={3}>
+          {/* Left Column - Type Selection */}
+          <Grid item xs={12} md={4}>
+            <Paper sx={{ 
+              p: 3, 
+              bgcolor: '#161b22',
+              border: '1px solid #30363d',
+              height: '100%',
+            }}>
+              <Typography variant="h6" sx={{ mb: 2, color: '#c9d1d9', fontWeight: 600 }}>
+                Achievement Type
+              </Typography>
+              <Typography variant="body2" sx={{ mb: 3, color: '#8b949e' }}>
+                Select the type of achievement you want to log
+              </Typography>
+              
+              <Stack spacing={2}>
+                {Object.entries(groupedTypes).map(([category, types]) => (
+                  <Box key={category}>
+                    <Typography 
+                      variant="overline" 
+                      sx={{ 
+                        color: '#8b949e',
+                        textTransform: 'uppercase',
+                        fontWeight: 600,
+                        display: 'block',
+                        mb: 1,
+                      }}
+                    >
+                      {category}
+                    </Typography>
+                    <Stack spacing={1}>
+                      {types.map((type) => (
+                        <Paper
+                          key={type.id}
+                          onClick={() => handleTypeSelect(type)}
+                          sx={{
+                            p: 2,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1.5,
+                            cursor: 'pointer',
+                            bgcolor: selectedType?.id === type.id ? `${type.color}22` : '#0d1117',
+                            border: '1px solid',
+                            borderColor: selectedType?.id === type.id ? type.color : '#30363d',
+                            transition: 'all 0.2s ease-in-out',
+                            '&:hover': {
+                              borderColor: type.color,
+                              bgcolor: `${type.color}11`,
+                              transform: 'translateY(-1px)',
+                            },
+                          }}
+                        >
+                          <Radio 
+                            checked={selectedType?.id === type.id}
+                            sx={{
+                              color: '#30363d',
+                              '&.Mui-checked': {
+                                color: type.color,
+                              },
+                            }}
+                          />
+                          <Box sx={{ color: type.color }}>
+                            {type.icon}
+                          </Box>
+                          <Box sx={{ flexGrow: 1 }}>
+                            <Typography 
+                              variant="subtitle2"
+                              sx={{ 
+                                color: '#c9d1d9',
+                                fontWeight: 600,
+                              }}
+                            >
+                              {type.label}
+                            </Typography>
+                            <AchievementBadges type={type} />
+                          </Box>
+                        </Paper>
+                      ))}
+                    </Stack>
+                  </Box>
+                ))}
+              </Stack>
+            </Paper>
+          </Grid>
+
+          {/* Right Column - Input and List */}
+          <Grid item xs={12} md={8}>
+            {/* Input Section */}
+            <Paper sx={{ 
+              p: 3, 
+              mb: 3,
+              bgcolor: '#161b22',
+              border: '1px solid #30363d',
+            }}>
+              <Typography variant="h6" sx={{ mb: 2, color: '#c9d1d9', fontWeight: 600 }}>
+                Log Achievement
+              </Typography>
+              <Typography variant="body2" sx={{ mb: 3, color: '#8b949e' }}>
+                {selectedType 
+                  ? `What ${selectedType.label.toLowerCase()} did you accomplish?`
+                  : 'Select an achievement type to start logging'
+                }
+              </Typography>
+
+              <TextField
+                id="achievement-input"
+                fullWidth
+                size="medium"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder={selectedType?.placeholder || "Select a type to start logging..."}
+                disabled={!selectedType}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSubmit();
+                  }
+                }}
+                InputProps={{
+                  startAdornment: selectedType && (
+                    <Box sx={{ color: selectedType.color, mr: 1, display: 'flex' }}>
+                      {selectedType.icon}
+                    </Box>
+                  ),
+                  endAdornment: input.trim() && (
+                    <Button
+                      variant="contained"
+                      onClick={handleSubmit}
+                      startIcon={<AddIcon />}
+                      sx={{ 
+                        bgcolor: selectedType?.color,
                         '&:hover': {
-                          borderColor: type.color,
-                          bgcolor: `${type.color}11`,
+                          bgcolor: `${selectedType?.color}dd`,
                         },
                       }}
                     >
-                      <Radio 
-                        checked={selectedType?.id === type.id}
-                        sx={{
-                          color: '#30363d',
-                          '&.Mui-checked': {
-                            color: type.color,
-                          },
-                        }}
-                      />
-                      <Box sx={{ color: type.color }}>
-                        {type.icon}
-                      </Box>
-                      <Box sx={{ flexGrow: 1 }}>
-                        <Typography 
-                          variant="body2"
-                          sx={{ 
-                            color: '#c9d1d9',
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                          }}
-                        >
-                          {type.label}
-                        </Typography>
-                        <AchievementBadges type={type} />
-                      </Box>
-                    </Paper>
-                  </Grid>
-                ))}
-              </React.Fragment>
-            ))}
-          </Grid>
-        </Box>
-
-        {/* Input Field */}
-        <Box sx={{ mb: 4 }}>
-          <TextField
-            fullWidth
-            size="small"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder={selectedType?.placeholder || "Select a type to start logging..."}
-            disabled={!selectedType}
-            onKeyPress={(e) => {
-              if (e.key === 'Enter') {
-                handleSubmit();
-              }
-            }}
-            InputProps={{
-              startAdornment: selectedType && (
-                <Box sx={{ color: selectedType.color, mr: 1 }}>
-                  {selectedType.icon}
-                </Box>
-              ),
-              endAdornment: input.trim() && (
-                <IconButton
-                  size="small"
-                  onClick={handleSubmit}
-                  sx={{ 
-                    color: selectedType?.color || '#8b949e',
-                    '&:hover': {
-                      bgcolor: `${selectedType?.color}22`,
-                    },
-                  }}
-                >
-                  <AddIcon />
-                </IconButton>
-              ),
-            }}
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                color: '#c9d1d9',
-                backgroundColor: '#161b22',
-                '& fieldset': { borderColor: '#30363d' },
-                '&:hover fieldset': { borderColor: selectedType?.color || '#30363d' },
-                '&.Mui-focused fieldset': { borderColor: selectedType?.color || '#30363d' },
-              },
-            }}
-          />
-        </Box>
-
-        {/* Achievement List */}
-        <Typography 
-          variant="h6" 
-          sx={{ 
-            mb: 2,
-            color: '#8b949e',
-            fontSize: '1rem',
-            fontWeight: 600,
-          }}
-        >
-          {format(selectedDate, 'MMMM d, yyyy')} Contributions
-        </Typography>
-        
-        {Object.keys(groupedAchievements).length === 0 ? (
-          <Box 
-            sx={{ 
-              p: 3, 
-              textAlign: 'center',
-              color: '#8b949e',
-              bgcolor: '#0d1117',
-              border: '1px solid #30363d',
-              borderRadius: 1,
-            }}
-          >
-            <Typography variant="body2">
-              No contributions for {format(selectedDate, 'MMMM d, yyyy')}
-            </Typography>
-          </Box>
-        ) : (
-          Object.entries(groupedAchievements).map(([category, categoryAchievements]) => (
-            <Box key={category} sx={{ mb: 4 }}>
-              <Typography 
-                variant="subtitle2" 
-                sx={{ 
-                  mb: 2,
-                  textTransform: 'capitalize',
-                  color: '#8b949e',
-                  fontSize: '0.875rem',
-                  fontWeight: 600,
+                      Add
+                    </Button>
+                  ),
                 }}
-              >
-                {category}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    color: '#c9d1d9',
+                    backgroundColor: '#0d1117',
+                    '& fieldset': { borderColor: '#30363d' },
+                    '&:hover fieldset': { borderColor: selectedType?.color || '#30363d' },
+                    '&.Mui-focused fieldset': { borderColor: selectedType?.color || '#30363d' },
+                  },
+                }}
+              />
+            </Paper>
+
+            {/* Today's Achievements */}
+            <Paper sx={{ 
+              p: 3,
+              bgcolor: '#161b22',
+              border: '1px solid #30363d',
+            }}>
+              <Typography variant="h6" sx={{ 
+                mb: 2, 
+                color: '#c9d1d9',
+                fontWeight: 600,
+              }}>
+                {format(selectedDate, "MMMM d, yyyy")} Achievements
               </Typography>
               
-              <List sx={{ 
-                bgcolor: '#0d1117',
-                border: '1px solid #30363d',
-                borderRadius: 1,
-              }}>
-                {categoryAchievements.map((achievement: Achievement, index: number) => (
-                  <Fade in key={achievement.id}>
-                    <ListItem 
+              {Object.keys(groupedAchievements).length === 0 ? (
+                <Box 
+                  sx={{ 
+                    p: 4, 
+                    textAlign: 'center',
+                    color: '#8b949e',
+                    bgcolor: '#0d1117',
+                    border: '1px dashed #30363d',
+                    borderRadius: 1,
+                  }}
+                >
+                  <Typography variant="body1" sx={{ mb: 1 }}>
+                    No achievements logged yet
+                  </Typography>
+                  <Typography variant="body2" color="textSecondary">
+                    Select an achievement type above to start logging
+                  </Typography>
+                </Box>
+              ) : (
+                Object.entries(groupedAchievements).map(([category, categoryAchievements]) => (
+                  <Box key={category} sx={{ mb: 4, '&:last-child': { mb: 0 } }}>
+                    <Typography 
+                      variant="overline" 
                       sx={{ 
-                        borderBottom: index < categoryAchievements.length - 1 ? '1px solid #21262d' : 'none',
-                        py: 1.5,
+                        mb: 2,
+                        display: 'block',
+                        color: '#8b949e',
+                        fontWeight: 600,
                       }}
                     >
-                      <ListItemIcon sx={{ minWidth: 36, color: achievement.type.color }}>
-                        {achievement.type.icon}
-                      </ListItemIcon>
-                      <ListItemText 
-                        primary={achievement.text}
-                        primaryTypographyProps={{
-                          sx: { color: '#c9d1d9' }
-                        }}
-                      />
-                      <Stack direction="row" spacing={1} alignItems="center">
-                        <Tooltip title={achievement.timeOfDay}>
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            {getTimeIcon(achievement.timeOfDay)}
-                          </Box>
-                        </Tooltip>
-                        <IconButton 
-                          edge="end" 
-                          size="small"
-                          onClick={() => removeAchievement(achievement.id)}
-                          sx={{ color: '#8b949e' }}
-                        >
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      </Stack>
-                    </ListItem>
-                  </Fade>
-                ))}
-              </List>
-            </Box>
-          ))
-        )}
+                      {category}
+                    </Typography>
+                    
+                    <List sx={{ 
+                      bgcolor: '#0d1117',
+                      border: '1px solid #21262d',
+                      borderRadius: 1,
+                    }}>
+                      {categoryAchievements.map((achievement: Achievement, index: number) => (
+                        <Fade in key={achievement.id}>
+                          <ListItem 
+                            sx={{ 
+                              borderBottom: index < categoryAchievements.length - 1 ? '1px solid #21262d' : 'none',
+                              py: 2,
+                              px: 3,
+                              '&:hover': {
+                                bgcolor: '#161b22',
+                              },
+                            }}
+                          >
+                            <ListItemIcon sx={{ 
+                              minWidth: 40,
+                              color: achievement.type.color,
+                              '& svg': { fontSize: 24 },
+                            }}>
+                              {achievement.type.icon}
+                            </ListItemIcon>
+                            <ListItemText 
+                              primary={achievement.text}
+                              primaryTypographyProps={{
+                                sx: { color: '#c9d1d9', fontWeight: 500 }
+                              }}
+                            />
+                            <Stack direction="row" spacing={1} alignItems="center">
+                              <Tooltip title={`Logged in the ${achievement.timeOfDay}`}>
+                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                  {getTimeIcon(achievement.timeOfDay)}
+                                </Box>
+                              </Tooltip>
+                              <Tooltip title="Edit">
+                                <IconButton 
+                                  size="small"
+                                  onClick={() => {
+                                    setSelectedType(achievement.type);
+                                    setInput(achievement.text);
+                                    removeAchievement(achievement.id);
+                                  }}
+                                  sx={{ 
+                                    color: '#8b949e',
+                                    '&:hover': {
+                                      color: achievement.type.color,
+                                      bgcolor: `${achievement.type.color}22`,
+                                    },
+                                  }}
+                                >
+                                  <EditIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="Delete">
+                                <IconButton 
+                                  size="small"
+                                  onClick={() => removeAchievement(achievement.id)}
+                                  sx={{ 
+                                    color: '#8b949e',
+                                    '&:hover': {
+                                      color: '#f85149',
+                                      bgcolor: '#f8514922',
+                                    },
+                                  }}
+                                >
+                                  <DeleteIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                            </Stack>
+                          </ListItem>
+                        </Fade>
+                      ))}
+                    </List>
+                  </Box>
+                ))
+              )}
+            </Paper>
+          </Grid>
+        </Grid>
       </Box>
     </LocalizationProvider>
   );
