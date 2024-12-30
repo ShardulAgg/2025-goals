@@ -30,17 +30,6 @@ gantt
     100 Customers     :2025-01-01, 365d
 ```
 
-## DAILY GRIND DISTRIBUTION 🎯
-
-```mermaid
-pie
-    title DAILY GRIND BREAKDOWN
-    "Strength Training" : 250
-    "Cardio Sessions" : 200
-    "Feature Launches" : 150
-    "Customer Wins" : 100
-```
-
 ## THE MINDSET 🧠
 
 ```mermaid
